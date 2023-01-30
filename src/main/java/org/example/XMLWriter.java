@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -41,6 +42,7 @@ public class XMLWriter implements DicomInputHandler, BulkDataCreator {
     private static final String TMP_XML_FILE_NAME = "output.xml";
     private final Path outputDir;
     private File tmpXmlFile;
+    private OutputStream outputStream;
 
     // next fields are used to build the final xml filename
     private String patientName;
@@ -109,7 +111,6 @@ public class XMLWriter implements DicomInputHandler, BulkDataCreator {
 
     private void writeValues(VR vr, Object val, boolean isBigEndian,
                              SpecificCharacterSet cs) throws IOException {
-
         if (vr.isStringType()) {
             val = vr.toStrings(val, isBigEndian, cs);
         }
@@ -193,10 +194,11 @@ public class XMLWriter implements DicomInputHandler, BulkDataCreator {
         endElement();
     }
 
+
     @Override
     public void startDataset(DicomInputStream dis) throws IOException {
         tmpXmlFile = Path.of(outputDir.toString(), TMP_XML_FILE_NAME).toFile();
-        var outputStream = new FileOutputStream(tmpXmlFile);
+        outputStream = new FileOutputStream(tmpXmlFile);
         try {
             this.writer = XMLOutputFactory.newInstance().createXMLStreamWriter(outputStream);
             this.writer.writeStartDocument();
@@ -215,6 +217,8 @@ public class XMLWriter implements DicomInputHandler, BulkDataCreator {
             this.writer.close();
         } catch (XMLStreamException e) {
             throw new IOException(e);
+        } finally {
+            this.outputStream.close();
         }
         // move result xml file
         Path xmlFilePath = outputDir.resolve(getFilePrefix() + ".xml");
