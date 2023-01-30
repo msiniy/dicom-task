@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @CommandLine.Command(name = "DicomTask", mixinStandardHelpOptions = true)
@@ -60,6 +61,15 @@ public class DicomTask implements Callable<Integer> {
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
         }
         return 0;
     }
